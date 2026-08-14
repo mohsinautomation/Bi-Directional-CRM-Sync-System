@@ -1,0 +1,1593 @@
+{
+  "name": "Bi-Directional CRM Sync System",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json.fields || {};\n\nconst errors = [];\n\n// ID validation\nif (!data.ID) {\n  errors.push(\"ID is required\");\n}\n\n// Name validation\nif (!data.Name || String(data.Name).trim() === \"\") {\n  errors.push(\"Name is required\");\n}\n\n// Email validation\nconst email = String(data.Email || \"\").trim();\n\nif (!email) {\n  errors.push(\"Email is required\");\n} else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {\n  errors.push(\"Invalid email format\");\n}\n\n// Phone validation\nconst phone = String(data.Phone || \"\").replace(/\\D/g, \"\");\n\nif (!phone) {\n  errors.push(\"Phone is required\");\n} else if (phone.length < 10 || phone.length > 15) {\n  errors.push(\"Invalid phone number\");\n}\n\n// Status validation\nconst allowedStatuses = [\"New\", \"Won\", \"Lost\"];\n\nif (!data.Status) {\n  errors.push(\"Status is required\");\n} else if (!allowedStatuses.includes(data.Status)) {\n  errors.push(`Invalid status: ${data.Status}`);\n}\n\n// Amount validation\nconst amount = Number(data.Amount);\n\nif (data.Amount === undefined || data.Amount === null || data.Amount === \"\") {\n  errors.push(\"Amount is required\");\n} else if (isNaN(amount)) {\n  errors.push(\"Amount must be a number\");\n} else if (amount < 0) {\n  errors.push(\"Amount cannot be negative\");\n}\n\n// Final result\nconst isValid = errors.length === 0;\n\nreturn [\n  {\n    json: {\n      ...data,\n      airtableRecordId: item.json.id,\n      isValid,\n      errors,\n      validationStatus: isValid ? \"VALID\" : \"INVALID\"\n    }\n  }\n];"
+      },
+      "id": "573997ce-88a8-439c-a38a-e8d206e02ba3",
+      "name": "Validate and Normalize Airtable Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2752,
+        -768
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM",
+          "mode": "list",
+          "cachedResultName": "Production - Airtable to Google Sheets One-Way Sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Email": "={{ $json.Email }}",
+            "Phone": "={{ $json.Phone }}",
+            "Status": "={{ $json.Status }}",
+            "Amount": "={{ $json.Amount }}",
+            "Airtable record id": "={{ $json.airtableRecordId }}",
+            "Last Updated": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Airtable record id",
+              "displayName": "Airtable record id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Synced Source",
+              "displayName": "Last Synced Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sync Status",
+              "displayName": "Sync Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "bfab5d04-0390-404c-8d28-7232bfa6bfff",
+      "name": "Find Google Sheets Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2528,
+        -768
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EsU51arSbZJ7FSzy",
+          "name": "Google Sheets account 362"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nconst airtable = $('Validate and Normalize Airtable Record').item.json;\n\n// Find Google Sheets Row থেকে কিছু data পাওয়া গেলে TRUE\nconst rowExists = Object.keys(data).length > 0;\n\nreturn [{\n  json: {\n    ...data,\n    ID: airtable.ID,\n    Name: airtable.Name,\n    Email: airtable.Email,\n    Phone: airtable.Phone,\n    Status: airtable.Status,\n    Amount: airtable.Amount,\n    rowExists,\n    action: rowExists ? \"UPDATE\" : \"CREATE\"\n  }\n}];"
+      },
+      "id": "4e1b9642-ef1f-4025-9e3b-af9741e50b06",
+      "name": "Determine Existing Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2304,
+        -768
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "existing-row-condition",
+              "leftValue": "={{ $json.rowExists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5542507a-7b3b-4e19-848e-9e3dacd6ea69",
+      "name": "IF Row Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2080,
+        -768
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM",
+          "mode": "list",
+          "cachedResultName": "Production - Airtable to Google Sheets One-Way Sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Airtable record id": "={{ $json['Airtable record id'] }}",
+            "Name": "={{ $json.Name }}",
+            "Email": "={{ $json.Email }}",
+            "Phone": "={{ $json.Phone }}",
+            "Status": "={{ $json.Status }}",
+            "Amount": "={{ $json.Amount }}",
+            "Last Updated": "={{ $json['Last Updated'] }}",
+            "Last Synced Source": "Airtable",
+            "Sync Status": "Synced"
+          },
+          "matchingColumns": [
+            "Airtable record id"
+          ],
+          "schema": [
+            {
+              "id": "Airtable record id",
+              "displayName": "Airtable record id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Synced Source",
+              "displayName": "Last Synced Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sync Status",
+              "displayName": "Sync Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "dade6a7a-6e0e-4214-b81b-3a9a126c8e81",
+      "name": "Update Existing Google Sheets Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1856,
+        -864
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EsU51arSbZJ7FSzy",
+          "name": "Google Sheets account 362"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM",
+          "mode": "list",
+          "cachedResultName": "Production - Airtable to Google Sheets One-Way Sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1429277400,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit#gid=1429277400"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Airtable record id": "={{ $json['Airtable record id'] }}",
+            "Name": "={{ $json.Name }}",
+            "Email": "={{ $json.Email }}",
+            "Phone": "={{ $json.Phone }}",
+            "Status": "={{ $json.Status }}",
+            "Amount": "={{ $json.Amount }}",
+            "Last Updated": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Airtable record id",
+              "displayName": "Airtable record id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Synced Source",
+              "displayName": "Last Synced Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sync Status",
+              "displayName": "Sync Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b08f8c6f-47c0-4588-9776-dbf505765741",
+      "name": "Append New Google Sheets Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1856,
+        -672
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EsU51arSbZJ7FSzy",
+          "name": "Google Sheets account 362"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nreturn [{\n  json: {\n    AirtableRecordID: data['Airtable record id'],\n    Action: 'UPDATE',\n    SyncStatus: 'SUCCESS',\n    Source: 'Airtable',\n    Name: data.Name,\n    Email: data.Email,\n    Timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "81036a93-4b56-4164-ad74-58731424bb30",
+      "name": "Prepare Update Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nreturn [{\n  json: {\n    AirtableRecordID: data['Airtable record id'],\n    Action: 'CREATE',\n    SyncStatus: 'SUCCESS',\n    Source: 'Airtable',\n    Name: data.Name,\n    Email: data.Email,\n    Timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "e3ace418-a65d-464f-bbb4-a10a1fbd9206",
+      "name": "Prepare Create Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        -672
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM",
+          "mode": "list",
+          "cachedResultName": "Production - Airtable to Google Sheets One-Way Sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 953800067,
+          "mode": "list",
+          "cachedResultName": "Log sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit#gid=953800067"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.Timestamp }}",
+            "AirtableRecordID": "={{ $json.AirtableRecordID }}",
+            "Action": "={{ $json.Action }}",
+            "SyncStatus": "={{ $json.SyncStatus }}",
+            "Source": "={{ $json.Source }}",
+            "Name": "={{ $json.Name }}",
+            "Email": "={{ $json.Email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AirtableRecordID",
+              "displayName": "AirtableRecordID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SyncStatus",
+              "displayName": "SyncStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "beae47f3-eff6-4626-b8af-4916796218dd",
+      "name": "Log Sync Success",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1408,
+        -768
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 3,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EsU51arSbZJ7FSzy",
+          "name": "Google Sheets account 362"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "app9SZYhP7G9tOLBQ",
+          "mode": "id"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "tbl2WzJ1MHf7Z2G3l",
+          "mode": "id"
+        },
+        "triggerField": "Name",
+        "additionalFields": {}
+      },
+      "id": "b67ac6d2-9578-4d50-945c-ba8b73808f96",
+      "name": "Airtable Trigger",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2976,
+        -768
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "HlOiyS3otxdkWpkB",
+          "name": "Airtable Personal Access Token account 122"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 10
+            }
+          ]
+        }
+      },
+      "id": "2c56626d-7ca2-4a0c-bcdb-bdcc3cdcd1ab",
+      "name": "Schedule Poll",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2976,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM",
+          "mode": "list",
+          "cachedResultName": "Production - Airtable to Google Sheets One-Way Sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Update",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "a2622f79-a262-497b-8f49-4faad87e9477",
+      "name": "Read Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2752,
+        -160
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EsU51arSbZJ7FSzy",
+          "name": "Google Sheets account 362"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst previousRows = staticData.rows || {};\n\nconst items = $input.all();\nconst output = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const row = items[i].json;\n\n  const rowNumber = row.row_number || i + 2;\n  const key = String(rowNumber);\n\n  // Business data only — sync metadata বাদ\n  const currentData = {\n    recordId: row['Airtable record id'] || '',\n    name: row['Name'] || '',\n    email: row['Email'] || '',\n    phone: row['Phone'] || '',\n    status: row['Status'] || '',\n    amount: row['Amount'] || ''\n  };\n\n  const currentHash = JSON.stringify(currentData);\n  const previousHash = previousRows[key];\n\n  // New row অথবা actual business-data change\n  if (!previousHash || currentHash !== previousHash) {\n    output.push({\n      json: {\n        ...row,\n        _sheet_row_number: rowNumber,\n        _detected_at: new Date().toISOString()\n      },\n      pairedItem: { item: i }\n    });\n  }\n\n  // Current state save\n  previousRows[key] = currentHash;\n}\n\nstaticData.rows = previousRows;\n\nreturn output;"
+      },
+      "id": "37df2dd6-0714-4879-ab10-b5eccb9fe13a",
+      "name": "Detect New or Modified Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2528,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst output = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const row = items[i].json;\n\n  const recordId = String(row['Airtable record id'] || '').trim();\n  const name = String(row['Name'] || '').trim();\n  const email = String(row['Email'] || '').trim().toLowerCase();\n  const phone = String(row['Phone'] || '').trim();\n  const status = String(row['Status'] || '').trim();\n  const amountRaw = row['Amount'];\n\n  const errors = [];\n\n  // Required fields\n  if (!name) errors.push('Name is required');\n  if (!email) errors.push('Email is required');\n\n  // Email validation\n  if (email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {\n    errors.push('Invalid email format');\n  }\n\n  // Amount validation\n  let amount = null;\n\n  if (amountRaw !== '' && amountRaw !== null && amountRaw !== undefined) {\n    amount = Number(amountRaw);\n\n    if (Number.isNaN(amount)) {\n      errors.push('Amount must be a number');\n    }\n  }\n\n  output.push({\n    json: {\n      ...row,\n\n      // Normalized data\n      airtable_record_id: recordId,\n      name,\n      email,\n      phone,\n      status,\n      amount,\n\n      // Validation result\n      is_valid: errors.length === 0,\n      validation_errors: errors,\n\n      _sheet_row_number: row['_sheet_row_number'] || row.row_number || i + 2\n    },\n\n    pairedItem: { item: i }\n  });\n}\n\nreturn output;"
+      },
+      "id": "a1b25596-6e11-4712-bb29-85cea2e1c3b3",
+      "name": "Validate and Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2304,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-record-id",
+              "leftValue": "={{ $json.airtable_record_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3c836be6-3329-4092-be46-f5ea1bdb6318",
+      "name": "Airtable Record ID Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2080,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Validate and Normalize').first().json;\nconst response = $json;\nconst exists = !!response.id;\n\nreturn [{\n  json: {\n    ...source,\n    airtable_exists: exists,\n    airtable_record_id: exists ? response.id : source.airtable_record_id,\n    airtable_record: response\n  }\n}];"
+      },
+      "id": "ca023ab5-a528-4b5b-b795-12b497306731",
+      "name": "Evaluate Record ID Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "record-exists",
+              "leftValue": "={{ $json.airtable_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a0916f46-19ee-485d-a030-7b691a2e05bc",
+      "name": "Record Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1408,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://airtable.com/app9SZYhP7G9tOLBQ/tbl2WzJ1MHf7Z2G3l/viwEx29nNybgM3fUf",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "maxRecords",
+              "value": "1"
+            },
+            {
+              "name": "filterByFormula",
+              "value": "={{ $json.order_id ? \"{Order ID}='\" + $json.order_id.replace(/'/g,\"\\\\'\") + \"'\" : ($json.customer_id ? \"{Customer ID}='\" + $json.customer_id.replace(/'/g,\"\\\\'\") + \"'\" : \"LOWER({Email})='\" + $json.email.replace(/'/g,\"\\\\'\") + \"'\") }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "3cdf2833-cc90-4402-8d0d-9a9df4b9e3ea",
+      "name": "Search Airtable by Business Identifier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1872,
+        112
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "HlOiyS3otxdkWpkB",
+          "name": "Airtable Personal Access Token account 122"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Validate and Normalize').first().json;\nconst records = Array.isArray($json.records) ? $json.records : [];\n\nreturn [{\n  json: {\n    ...source,\n    airtable_exists: records.length > 0,\n    airtable_record_id: records.length > 0 ? records[0].id : '',\n    airtable_record: records.length > 0 ? records[0] : null\n  }\n}];"
+      },
+      "id": "e0a0fae1-2a53-49a2-9c38-2cdac8d94977",
+      "name": "Evaluate Business Identifier Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "found-record",
+              "leftValue": "={{ $json.airtable_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5c7425d7-45f3-4054-8f18-f98f5c8c3896",
+      "name": "Existing Airtable Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1376,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/app9SZYhP7G9tOLBQ/tbl2WzJ1MHf7Z2G3l/{{ $json.airtable_record_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  fields: {\n    Name: $json.name,\n    Email: $json.email,\n    Phone: $json.phone,\n    Status: $json.status,\n    Amount: $json.amount\n  }\n} }}",
+        "options": {}
+      },
+      "id": "e701e372-a2d8-4201-92eb-c37cfa1e876a",
+      "name": "Update Airtable Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1136,
+        -272
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "HlOiyS3otxdkWpkB",
+          "name": "Airtable Personal Access Token account 122"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/app9SZYhP7G9tOLBQ/tbl2WzJ1MHf7Z2G3l/{{ $json.airtable_record_id",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  fields: {\n    Name: $json.name,\n    Email: $json.email,\n    Phone: $json.phone,\n    Status: $json.status,\n    Amount: $json.amount\n  }\n} }}",
+        "options": {}
+      },
+      "id": "342ffb95-6573-449c-a8e5-5459d6f12d4e",
+      "name": "Create Airtable Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1104,
+        128
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "HlOiyS3otxdkWpkB",
+          "name": "Airtable Personal Access Token account 122"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Validate and Normalize').first().json;\nconst created = $json;\n\nif (!created.id) throw new Error('Airtable record creation failed: Record ID was not returned.');\n\nreturn [{\n  json: {\n    ...source,\n    new_airtable_record_id: created.id,\n    sync_status: 'CREATED',\n    sync_time: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "a4b3de03-1bd1-47d2-9064-46182e37e779",
+      "name": "Prepare New Record ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "GOOGLE_SHEET_NAME"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Airtable Record ID": "={{ $json.new_airtable_record_id }}"
+          },
+          "matchingColumns": [
+            "Airtable Record ID"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "e99ef0c4-655e-48b3-94b5-d4781b862787",
+      "name": "Write Airtable Record ID to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -624,
+        128
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EsU51arSbZJ7FSzy",
+          "name": "Google Sheets account 362"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{\n  airtable_record_id: $json.airtable_record_id || $json.new_airtable_record_id || '',\n  operation: $json.sync_status || 'UPDATED',\n  status: 'SUCCESS',\n  sheet_row_number: $json.sheet_row_number,\n  timestamp: new Date().toISOString()\n}}];"
+      },
+      "id": "4c470d33-e8dd-41ce-a8df-07341510d38e",
+      "name": "Prepare Success Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM",
+          "mode": "list",
+          "cachedResultName": "Production - Airtable to Google Sheets One-Way Sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 953800067,
+          "mode": "list",
+          "cachedResultName": "Log sync",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DJrksvfXiP7Y4YYxN_wSzo911kiQPErDcFtRGRCtunM/edit#gid=953800067"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Update Airtable Record').item.json.fields.Name }}",
+            "Email": "={{ $('Update Airtable Record').item.json.fields.Email }}",
+            "AirtableRecordID": "={{ $('Update Airtable Record').item.json.id }}",
+            "SyncStatus": "={{ $json.status }}",
+            "Action": "={{ $json.operation }}",
+            "Timestamp": "={{ $json.timestamp }}",
+            "Source": "Airtable"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AirtableRecordID",
+              "displayName": "AirtableRecordID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SyncStatus",
+              "displayName": "SyncStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "dc597242-258a-4686-af4a-867641113dd6",
+      "name": "Log Sync",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -592,
+        -272
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 3,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EsU51arSbZJ7FSzy",
+          "name": "Google Sheets account 362"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "app9SZYhP7G9tOLBQ",
+          "mode": "list",
+          "cachedResultName": "Production - Airtable to Google Sheets One-Way Sync",
+          "cachedResultUrl": "https://airtable.com/app9SZYhP7G9tOLBQ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl2WzJ1MHf7Z2G3l",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/app9SZYhP7G9tOLBQ/tbl2WzJ1MHf7Z2G3l"
+        },
+        "id": "={{ $json['Airtable record id'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1856,
+        -256
+      ],
+      "id": "e1167eb0-cb4c-418f-8940-cd293f5e13cb",
+      "name": "Get a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "HlOiyS3otxdkWpkB",
+          "name": "Airtable Personal Access Token account 122"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2944,
+        208
+      ],
+      "id": "c1d1665d-d929-4e38-9521-88abaab2dce5",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "7893055958",
+        "text": "error",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2736,
+        208
+      ],
+      "id": "c7bd0391-ab81-4983-baac-02507def4786",
+      "name": "Send a text message",
+      "webhookId": "b72ac67d-e2db-44b7-abff-35a3653cd9a2",
+      "credentials": {
+        "telegramApi": {
+          "id": "rK1HKmFeLD2p5Lie",
+          "name": "Telegram account 1985199105"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate and Normalize Airtable Record": {
+      "main": [
+        [
+          {
+            "node": "Find Google Sheets Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Google Sheets Row": {
+      "main": [
+        [
+          {
+            "node": "Determine Existing Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Existing Row": {
+      "main": [
+        [
+          {
+            "node": "IF Row Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Row Exists": {
+      "main": [
+        [
+          {
+            "node": "Update Existing Google Sheets Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append New Google Sheets Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Existing Google Sheets Row": {
+      "main": [
+        [
+          {
+            "node": "Prepare Update Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append New Google Sheets Row": {
+      "main": [
+        [
+          {
+            "node": "Prepare Create Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Update Log": {
+      "main": [
+        [
+          {
+            "node": "Log Sync Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Create Log": {
+      "main": [
+        [
+          {
+            "node": "Log Sync Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate and Normalize Airtable Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Poll": {
+      "main": [
+        [
+          {
+            "node": "Read Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Detect New or Modified Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect New or Modified Rows": {
+      "main": [
+        [
+          {
+            "node": "Validate and Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate and Normalize": {
+      "main": [
+        [
+          {
+            "node": "Airtable Record ID Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Record ID Available?": {
+      "main": [
+        [
+          {
+            "node": "Get a record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Airtable by Business Identifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Record ID Lookup": {
+      "main": [
+        [
+          {
+            "node": "Record Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Airtable by Business Identifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Airtable by Business Identifier": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Business Identifier Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Business Identifier Lookup": {
+      "main": [
+        [
+          {
+            "node": "Existing Airtable Match?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Airtable Match?": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Airtable Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Airtable Record": {
+      "main": [
+        [
+          {
+            "node": "Prepare Success Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Airtable Record": {
+      "main": [
+        [
+          {
+            "node": "Prepare New Record ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Record ID": {
+      "main": [
+        [
+          {
+            "node": "Write Airtable Record ID to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Airtable Record ID to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Prepare Success Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Success Log": {
+      "main": [
+        [
+          {
+            "node": "Log Sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a record": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Record ID Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "66463a20-cba4-4b29-97e4-dfd41db6130c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "50918ee0be4fd9ad8edd59da0eb4c4a6502c186d6a425a1cf635ba824838446e"
+  },
+  "nodeGroups": [],
+  "id": "aqhzc95cFk6RKRZV",
+  "tags": [
+    {
+      "updatedAt": "2026-08-13T11:29:39.403Z",
+      "createdAt": "2026-08-13T11:29:39.403Z",
+      "id": "94Y8R97xGf6eiPhg",
+      "name": "google-sheets"
+    },
+    {
+      "updatedAt": "2026-05-06T11:39:52.046Z",
+      "createdAt": "2026-05-06T11:39:52.046Z",
+      "id": "AqeNZ2Xw6jy0oH2E",
+      "name": "production"
+    },
+    {
+      "updatedAt": "2026-08-13T11:29:39.417Z",
+      "createdAt": "2026-08-13T11:29:39.417Z",
+      "id": "CaKxpRCIlWBD5hlt",
+      "name": "one-way-sync"
+    },
+    {
+      "updatedAt": "2026-08-13T11:29:39.410Z",
+      "createdAt": "2026-08-13T11:29:39.410Z",
+      "id": "Owk9fHvPVSuVCw0n",
+      "name": "airtable"
+    }
+  ]
+}
